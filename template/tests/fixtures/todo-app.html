@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>QAF Demo Todo App</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 32rem; margin: 2rem auto; }
+    li.completed label { text-decoration: line-through; color: #888; }
+    li { display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0; }
+    label { flex: 1; }
+  </style>
+</head>
+<body>
+  <!--
+    Deliberately mixed markup: most interactive elements carry data-testid (the
+    resolver's preferred strategy), but the delete button and the remaining-count
+    text do NOT, so the example specs exercise the role and text fallback
+    strategies too, not just the happy path.
+  -->
+  <h1>Todos</h1>
+  <form data-testid="new-todo-form">
+    <input data-testid="new-todo-input" type="text" placeholder="What needs to be done?" autofocus />
+    <button data-testid="add-todo-button" type="submit">Add</button>
+  </form>
+  <ul data-testid="todo-list"></ul>
+  <p><span id="count"></span></p>
+
+  <script>
+    const list = document.querySelector('[data-testid="todo-list"]');
+    const form = document.querySelector('[data-testid="new-todo-form"]');
+    const input = document.querySelector('[data-testid="new-todo-input"]');
+    const count = document.querySelector('#count');
+    let todos = [];
+    let nextId = 1;
+
+    function render() {
+      list.innerHTML = '';
+      for (const todo of todos) {
+        const li = document.createElement('li');
+        li.dataset.testid = `todo-item-${todo.id}`;
+        if (todo.done) li.classList.add('completed');
+
+        const toggle = document.createElement('input');
+        toggle.type = 'checkbox';
+        toggle.checked = todo.done;
+        toggle.setAttribute('data-testid', `todo-toggle-${todo.id}`);
+        toggle.setAttribute('aria-label', `Toggle ${todo.title}`);
+        toggle.addEventListener('change', () => {
+          todo.done = toggle.checked;
+          render();
+        });
+
+        const label = document.createElement('label');
+        label.setAttribute('data-testid', 'todo-label');
+        label.textContent = todo.title;
+
+        // Intentionally no data-testid: exercises the role fallback strategy.
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.setAttribute('aria-label', `Delete ${todo.title}`);
+        del.textContent = 'x';
+        del.addEventListener('click', () => {
+          todos = todos.filter((t) => t.id !== todo.id);
+          render();
+        });
+
+        li.append(toggle, label, del);
+        list.appendChild(li);
+      }
+      // Intentionally no data-testid or role: exercises the text fallback strategy.
+      const remaining = todos.filter((t) => !t.done).length;
+      count.textContent = `${remaining} item${remaining === 1 ? '' : 's'} left`;
+    }
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const title = input.value.trim();
+      if (!title) return;
+      todos.push({ id: nextId++, title, done: false });
+      input.value = '';
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>

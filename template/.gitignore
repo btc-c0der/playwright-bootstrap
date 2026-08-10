@@ -1,0 +1,32 @@
+node_modules/
+dist/
+
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+test-run-history.jsonl
+locator-repair-suggestions.jsonl
+vector-healing-suggestions.jsonl
+flake-detection-summary.json
+
+# @qaf/rag-core (opt-in, see docs/rag-coverage.md) — vector index + generated reports
+.qaf/vector-index/
+ci-failures.jsonl
+
+# @qaf/graph-rag (opt-in, see docs/graph-rag.md) — topology graph + incident store + CLI outputs
+.qaf/graph-index/
+qaf-graph-impact.json
+qaf-graph-changed-refs.json
+qaf-graph-failure.json
+
+.env
+.env.local
+!.env.example
+
+*.log
+
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea/

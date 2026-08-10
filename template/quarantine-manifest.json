@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "ceiling": {
+    "maxCount": 50,
+    "maxPercent": 5,
+    "maxRenewals": 3
+  },
+  "entries": [
+    {
+      "id": "web/specs/quarantine-example.spec.ts::chromium-quarantine::Quarantine example > demonstrates the quarantine mechanism @quarantined",
+      "file": "web/specs/quarantine-example.spec.ts",
+      "project": "chromium-quarantine",
+      "status": "quarantined",
+      "reason": "flaky-example — kept intentionally to demonstrate the mechanism, safe to remove",
+      "firstSeen": "2026-01-01T00:00:00.000Z",
+      "lastFailure": "2026-01-01T00:00:00.000Z",
+      "flakeRate": { "window": 20, "failures": 4 },
+      "quarantinedAt": "2026-01-01T00:00:00.000Z",
+      "expiresAt": "2099-01-01T00:00:00.000Z",
+      "renewalCount": 0,
+      "linkedIssue": "https://github.com/{{ORG_SCOPE}}/{{PROJECT_NAME}}/issues/1"
+    }
+  ]
+}

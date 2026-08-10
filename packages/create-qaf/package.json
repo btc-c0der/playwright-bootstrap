@@ -1,0 +1,32 @@
+{
+  "name": "create-qaf",
+  "version": "0.1.0",
+  "description": "Scaffolds a new QA automation repo from the QAF template, wired to published @qaf/core and @qaf/eslint-plugin-qaf versions.",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "create-qaf": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "template"
+  ],
+  "scripts": {
+    "sync-template": "node ./scripts/sync-template.mjs",
+    "build": "npm run sync-template && tsc -b",
+    "typecheck": "tsc -b --noEmit",
+    "lint": "eslint . --config ../../eslint.config.js",
+    "prepack": "npm run build",
+    "clean": "rm -rf dist template *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@qaf/core": "workspace:*",
+    "@qaf/eslint-plugin-qaf": "workspace:*",
+    "prompts": "^2.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/prompts": "^2.4.9",
+    "typescript": "^5.7.2"
+  }
+}

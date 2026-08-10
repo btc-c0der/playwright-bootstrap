@@ -1,0 +1,44 @@
+{
+  "name": "@qaf/graph-rag",
+  "version": "0.1.0",
+  "description": "GraphRAG for SIT: a system-topology graph (Microservice/Endpoint/MessageQueue/DBTable/TestCase/UserStory) ingested from contracts, used for PR impact-based test selection and embedding-assisted cascading root-cause diagnosis. Opt-in — ships only local/no-op defaults.",
+  "type": "module",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "qaf-graph-ingest": "./dist/bin/qaf-graph-ingest.js",
+    "qaf-graph-impact": "./dist/bin/qaf-graph-impact.js",
+    "qaf-graph-diagnose": "./dist/bin/qaf-graph-diagnose.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b --emitDeclarationOnly false --noEmit",
+    "lint": "eslint . --config ../../eslint.config.js",
+    "test": "tsc -p tsconfig.test.json && node --test '.test-dist/**/*.test.js'",
+    "clean": "rm -rf dist .test-dist *.tsbuildinfo"
+  },
+  "peerDependencies": {
+    "@qaf/rag-core": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "@qaf/rag-core": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@qaf/rag-core": "workspace:*",
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}

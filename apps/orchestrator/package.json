@@ -1,0 +1,36 @@
+{
+  "name": "@qaf/orchestrator",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Layer 2 (Orchestration & Agents) of the AI-Driven QA Platform: QAAgentOrchestrator, a LangGraph.js StateGraph that routes one CI/CD test-failure payload across the four Layer 3 pillars (Impact Analysis -> Data Generation -> Test Execution -> Healing -> Root Cause Analysis). Not published — consumed in-process by @qaf/gateway-api.",
+  "type": "module",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b --emitDeclarationOnly false --noEmit",
+    "lint": "eslint . --config ../../eslint.config.js",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@langchain/core": "^0.3.0",
+    "@langchain/langgraph": "^0.2.0",
+    "@qaf/core": "workspace:*",
+    "@qaf/engine-contracts": "workspace:*",
+    "@qaf/graph-rag": "workspace:*",
+    "@qaf/llm-gateway": "workspace:*",
+    "@qaf/storage-core": "workspace:*",
+    "@qaf/synth-data": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}

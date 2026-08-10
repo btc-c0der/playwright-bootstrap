@@ -1,0 +1,49 @@
+name: Visual regression
+
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      updateBaselines:
+        description: "Regenerate baselines and open a PR (manual review required — never auto-merged)"
+        type: boolean
+        default: false
+
+jobs:
+  visual:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "{{PKG_MANAGER}}"
+      - run: {{PKG_MANAGER}} install --frozen-lockfile
+      - run: npx playwright install --with-deps chromium
+
+      - name: Run visual project
+        if: ${{ !inputs.updateBaselines }}
+        run: {{PKG_MANAGER}} run test:visual
+
+      - name: Regenerate baselines
+        if: ${{ inputs.updateBaselines }}
+        run: {{PKG_MANAGER}} run test:visual:update
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: visual-report
+          path: playwright-report
+          retention-days: 14
+
+      # Baseline updates are never committed directly — a human reviews the
+      # diff PNGs before merging (docs/visual-testing.md).
+      - name: Open PR with updated baselines
+        if: ${{ inputs.updateBaselines }}
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: "chore(visual): update baselines"
+          title: "chore(visual): update visual baselines"
+          body: "Automated baseline regeneration — review the diffs carefully before merging. Never merge without visually confirming each changed PNG is an intended UI change."
+          branch: chore/update-visual-baselines
+          add-paths: tests/**/*-snapshots/**

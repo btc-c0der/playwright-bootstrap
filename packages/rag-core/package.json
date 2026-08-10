@@ -1,0 +1,53 @@
+{
+  "name": "@qaf/rag-core",
+  "version": "0.1.0",
+  "description": "RAG semantic coverage for QAF: embeds specs/tickets/tests into a shared vector space for spec-to-test mapping and CI failure root-cause clustering. Opt-in — ships only local/no-op defaults.",
+  "type": "module",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./reporter": {
+      "types": "./dist/reporters/failure-reporter.d.ts",
+      "default": "./dist/reporters/failure-reporter.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "qaf-rag-index": "./dist/bin/qaf-rag-index.js",
+    "qaf-rag-map": "./dist/bin/qaf-rag-map.js",
+    "qaf-rag-cluster": "./dist/bin/qaf-rag-cluster.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b --emitDeclarationOnly false --noEmit",
+    "lint": "eslint . --config ../../eslint.config.js",
+    "test": "tsc -p tsconfig.test.json && node --test '.test-dist/**/*.test.js'",
+    "clean": "rm -rf dist .test-dist *.tsbuildinfo"
+  },
+  "peerDependencies": {
+    "@playwright/test": ">=1.48.0",
+    "@qaf/core": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "@playwright/test": {
+      "optional": true
+    },
+    "@qaf/core": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.1",
+    "@qaf/core": "workspace:*",
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}

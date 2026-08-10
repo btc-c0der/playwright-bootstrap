@@ -1,0 +1,194 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "{{PKG_MANAGER}}"
+      - run: {{PKG_MANAGER}} install --frozen-lockfile
+      - run: {{PKG_MANAGER}} run lint
+      - run: {{PKG_MANAGER}} run typecheck
+
+  # Shard count scales with suite size instead of being hardcoded: reads a
+  # rolling 30-run average from test-duration-history.json (produced by a
+  # previous merge-reports run) and targets ~5 minutes of tests per shard.
+  # Falls back to 4 shards with no history yet (a fresh repo). See
+  # docs/ci-sharding.md.
+  determine-shards:
+    runs-on: ubuntu-latest
+    needs: lint-typecheck
+    outputs:
+      shards: ${{ steps.compute.outputs.shards }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: compute
+        run: |
+          node -e '
+            const fs = require("fs");
+            const targetPerShardMinutes = 5;
+            let estMinutes = 20;
+            try {
+              const history = JSON.parse(fs.readFileSync("test-duration-history.json", "utf-8"));
+              estMinutes = history.rollingAverageMinutes ?? estMinutes;
+            } catch {}
+            const count = Math.min(32, Math.max(4, Math.ceil(estMinutes / targetPerShardMinutes)));
+            const shards = Array.from({ length: count }, (_, i) => i + 1);
+            fs.writeFileSync(process.env.GITHUB_OUTPUT, `shards=${JSON.stringify(shards)}\n`, { flag: "a" });
+          '
+
+  test:
+    runs-on: ubuntu-latest
+    needs: determine-shards
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium, firefox, webkit, mobile-chrome, mobile-safari, api]
+        shard: ${{ fromJson(needs.determine-shards.outputs.shards) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "{{PKG_MANAGER}}"
+      - run: {{PKG_MANAGER}} install --frozen-lockfile
+      - run: npx playwright install --with-deps
+      - run: >
+          npx playwright test --project=${{ matrix.project }}
+          --shard=${{ matrix.shard }}/${{ strategy.job-total }}
+        env:
+          QAF_SHARD_INDEX: ${{ matrix.shard }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: blob-report-${{ matrix.project }}-${{ matrix.shard }}
+          path: blob-report
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: history-${{ matrix.project }}-${{ matrix.shard }}
+          path: test-run-history.jsonl
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # Non-blocking: runs only @quarantined tests with continue-on-error, feeding
+  # the same history file the nightly quarantine-audit job aggregates.
+  quarantine-run:
+    runs-on: ubuntu-latest
+    needs: determine-shards
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "{{PKG_MANAGER}}"
+      - run: {{PKG_MANAGER}} install --frozen-lockfile
+      - run: npx playwright install --with-deps
+      - run: npx playwright test --project=chromium-quarantine
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: history-quarantine
+          path: test-run-history.jsonl
+          if-no-files-found: ignore
+          retention-days: 7
+
+  merge-reports:
+    runs-on: ubuntu-latest
+    needs: [test, quarantine-run]
+    if: always()
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "{{PKG_MANAGER}}"
+      - run: {{PKG_MANAGER}} install --frozen-lockfile
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: blob-report-*
+          path: all-blob-reports
+          merge-multiple: true
+      - run: npx playwright merge-reports --reporter=html ./all-blob-reports
+      - uses: actions/upload-artifact@v4
+        with:
+          name: html-report
+          path: playwright-report
+          retention-days: 14
+      - name: Enforce quarantine ceiling + tag/manifest sync
+        run: {{PKG_MANAGER}} run check-quarantine
+
+      # Aggregates every shard's test-run-history.jsonl (trimmed to the last 50
+      # runs per test id) into .qaf/test-run-history.jsonl, which the nightly
+      # quarantine-audit.yml job reads to detect new flakes. Committed to git
+      # like quarantine-manifest.json — same "state lives in a reviewable file,
+      # not an external service" pattern. See docs/quarantine.md.
+      - uses: actions/download-artifact@v4
+        if: github.ref == 'refs/heads/main'
+        with:
+          pattern: history-*
+          path: all-history
+          merge-multiple: false
+      - name: Aggregate + trim history
+        if: github.ref == 'refs/heads/main'
+        run: |
+          node -e '
+            const fs = require("fs");
+            const path = require("path");
+            const dir = "all-history";
+            const byId = new Map();
+            if (fs.existsSync(dir)) {
+              for (const sub of fs.readdirSync(dir)) {
+                const file = path.join(dir, sub, "test-run-history.jsonl");
+                if (!fs.existsSync(file)) continue;
+                for (const line of fs.readFileSync(file, "utf-8").split("\n")) {
+                  if (!line.trim()) continue;
+                  const record = JSON.parse(line);
+                  const list = byId.get(record.id) ?? [];
+                  list.push(record);
+                  byId.set(record.id, list);
+                }
+              }
+            }
+            const existing = ".qaf/test-run-history.jsonl";
+            if (fs.existsSync(existing)) {
+              for (const line of fs.readFileSync(existing, "utf-8").split("\n")) {
+                if (!line.trim()) continue;
+                const record = JSON.parse(line);
+                const list = byId.get(record.id) ?? [];
+                list.push(record);
+                byId.set(record.id, list);
+              }
+            }
+            fs.mkdirSync(".qaf", { recursive: true });
+            const out = [];
+            for (const [, records] of byId) {
+              records.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+              out.push(...records.slice(-50));
+            }
+            fs.writeFileSync(existing, out.map((r) => JSON.stringify(r)).join("\n") + "\n");
+          '
+      - name: Commit history (main only)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "qaf-bot"
+          git config user.email "qaf-bot@users.noreply.github.com"
+          git add .qaf/test-run-history.jsonl
+          git diff --cached --quiet || git commit -m "chore(qaf): update test run history [skip ci]"
+          git push

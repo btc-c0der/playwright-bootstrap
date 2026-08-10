@@ -1,0 +1,40 @@
+node_modules/
+dist/
+build/
+.turbo/
+.test-dist/
+*.tsbuildinfo
+
+# Playwright
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# Visual baselines diffs (kept: *-snapshots/ baseline PNGs themselves are committed)
+**/*-actual.png
+**/*-diff.png
+
+# Env
+.env
+.env.local
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Editors / OS
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Coverage
+coverage/
+
+# AI-Driven QA Platform local runtime state (Local*Store defaults — execution
+# history, token-usage audit, vector index, demo output)
+.qaf/
+**/.qaf/

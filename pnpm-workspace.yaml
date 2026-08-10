@@ -1,0 +1,7 @@
+packages:
+  - "packages/*"
+  # Deployable services (the AI-Driven QA Platform's Layer 1/Layer 2
+  # containers) — never published to npm, see .changeset/config.json's
+  # `ignore` list. Distinct from `packages/*`, which is every importable
+  # library this monorepo ships (published via Changesets).
+  - "apps/*"

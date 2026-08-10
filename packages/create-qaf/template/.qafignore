@@ -1,0 +1,10 @@
+# Patterns (simple `*` wildcards, matched against path relative to template/)
+# excluded by create-qaf when scaffolding a new repo.
+node_modules
+node_modules/*
+dist
+test-results
+test-results/*
+playwright-report
+playwright-report/*
+*.tsbuildinfo

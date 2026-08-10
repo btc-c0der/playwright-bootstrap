@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "QAF Quarantine Manifest",
+  "type": "object",
+  "required": ["version", "ceiling", "entries"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "const": 1 },
+    "ceiling": {
+      "type": "object",
+      "required": ["maxCount", "maxPercent"],
+      "additionalProperties": false,
+      "properties": {
+        "maxCount": { "type": "integer", "minimum": 0 },
+        "maxPercent": { "type": "number", "minimum": 0, "maximum": 100 },
+        "maxRenewals": { "type": "integer", "minimum": 0, "default": 3 }
+      }
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "file",
+          "project",
+          "status",
+          "reason",
+          "firstSeen",
+          "lastFailure",
+          "quarantinedAt",
+          "expiresAt",
+          "renewalCount"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "description": "file::project::titlePath" },
+          "file": { "type": "string" },
+          "project": { "type": "string" },
+          "status": { "type": "string", "enum": ["quarantined", "resolved"] },
+          "reason": { "type": "string" },
+          "firstSeen": { "type": "string", "format": "date-time" },
+          "lastFailure": { "type": "string", "format": "date-time" },
+          "flakeRate": {
+            "type": "object",
+            "properties": {
+              "window": { "type": "integer" },
+              "failures": { "type": "integer" }
+            }
+          },
+          "quarantinedAt": { "type": "string", "format": "date-time" },
+          "expiresAt": { "type": "string", "format": "date-time" },
+          "renewalCount": { "type": "integer", "minimum": 0 },
+          "linkedIssue": { "type": "string" }
+        }
+      }
+    }
+  }
+}

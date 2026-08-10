@@ -1,0 +1,47 @@
+{
+  "name": "@qaf/core",
+  "version": "0.1.0",
+  "description": "QA automation framework core: fixtures, base POM, data isolation, locator resolver with AI-repair hook, quarantine engine, visual/a11y helpers, logger.",
+  "type": "module",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./reporter": {
+      "types": "./dist/quarantine/reporter.d.ts",
+      "default": "./dist/quarantine/reporter.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "qaf-check-quarantine": "./dist/bin/qaf-check-quarantine.js"
+  },
+  "files": [
+    "dist",
+    "quarantine-manifest.schema.json"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b --emitDeclarationOnly false --noEmit",
+    "lint": "eslint . --config ../../eslint.config.js",
+    "test": "tsc -p tsconfig.test.json && node --test '.test-dist/**/*.test.js'",
+    "clean": "rm -rf dist .test-dist *.tsbuildinfo"
+  },
+  "peerDependencies": {
+    "@playwright/test": ">=1.48.0"
+  },
+  "dependencies": {
+    "@axe-core/playwright": "^4.10.1",
+    "pino": "^9.6.0",
+    "pino-pretty": "^13.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.1",
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}

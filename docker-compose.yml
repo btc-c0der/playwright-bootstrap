@@ -1,0 +1,88 @@
+# Local infrastructure for the AI-Driven QA Platform's 5-layer blueprint:
+#   - gateway-api : Layer 1 (Consumers & Entrypoints) + Layer 2 (Orchestration),
+#                    the one Node service this repo deploys.
+#   - postgres    : Layer 4 relational store — execution history, platform
+#                    logs, token-usage audit (see packages/storage-core/schema.sql).
+#   - neo4j       : Layer 4 graph store — GraphRAG's system-topology graph
+#                    (@qaf/graph-rag's Neo4jCompatibleGraphStore).
+#   - chromadb    : Layer 4 vector store — RAG spec-to-test coverage +
+#                    failure clustering (@qaf/storage-core's ChromaVectorStore).
+#
+# Layer 5 (LLM providers) isn't a container here — @qaf/llm-gateway calls
+# out to OpenAI/Anthropic/Ollama/a LiteLLM proxy directly; point
+# OPENAI_BASE_URL at a local Ollama or LiteLLM container of your own if you
+# want that local too.
+#
+# `gateway-api` ships with local/no-op defaults and runs with none of these
+# three data services present (see apps/gateway-api/src/config.ts) — this
+# compose file is for exercising the production adapters in
+# @qaf/storage-core, not a hard requirement to boot the service.
+
+services:
+  gateway-api:
+    build:
+      context: .
+      dockerfile: apps/gateway-api/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: "3000"
+      POSTGRES_URL: postgres://qaf:qaf@postgres:5432/qaf
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: qafqafqaf
+      CHROMA_URL: http://chromadb:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+      chromadb:
+        condition: service_started
+    volumes:
+      - gateway_data:/repo/apps/gateway-api/.qaf
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: qaf
+      POSTGRES_PASSWORD: qaf
+      POSTGRES_DB: qaf
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./packages/storage-core/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U qaf"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  neo4j:
+    image: neo4j:5-community
+    environment:
+      NEO4J_AUTH: neo4j/qafqafqaf
+    ports:
+      - "7474:7474" # browser UI
+      - "7687:7687" # bolt (what CypherDriver talks to)
+    volumes:
+      - neo4j_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7474 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  chromadb:
+    image: chromadb/chroma:latest
+    ports:
+      - "8000:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+
+volumes:
+  postgres_data:
+  neo4j_data:
+  chroma_data:
+  gateway_data:

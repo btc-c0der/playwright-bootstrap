@@ -1,0 +1,45 @@
+{
+  "name": "@qaf/storage-core",
+  "version": "0.1.0",
+  "description": "Layer 4 storage interfaces for the AI-Driven QA Platform: relational/document stores for execution history, logs, and token-usage audit, plus production adapters for the vector/graph abstractions @qaf/rag-core and @qaf/graph-rag already define (Qdrant, Chroma, pgvector, Neo4j). Opt-in, dependency-free by default — every adapter is a driver you inject, not an SDK this package pulls in.",
+  "type": "module",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "schema.sql"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b --emitDeclarationOnly false --noEmit",
+    "lint": "eslint . --config ../../eslint.config.js",
+    "test": "tsc -p tsconfig.test.json && node --test '.test-dist/**/*.test.js'",
+    "clean": "rm -rf dist .test-dist *.tsbuildinfo"
+  },
+  "peerDependencies": {
+    "@qaf/graph-rag": "workspace:*",
+    "@qaf/rag-core": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "@qaf/graph-rag": {
+      "optional": true
+    },
+    "@qaf/rag-core": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@qaf/graph-rag": "workspace:*",
+    "@qaf/rag-core": "workspace:*",
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}

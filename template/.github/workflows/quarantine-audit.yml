@@ -1,0 +1,43 @@
+name: Quarantine audit
+
+on:
+  schedule:
+    - cron: "0 6 * * *" # 06:00 UTC nightly
+  workflow_dispatch:
+
+jobs:
+  detect-flakes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "{{PKG_MANAGER}}"
+      - run: {{PKG_MANAGER}} install --frozen-lockfile
+
+      - name: Detect flaky tests and propose quarantine
+        run: node scripts/detect-flakes.mjs
+
+      - name: Enforce ceiling on the resulting manifest
+        run: {{PKG_MANAGER}} run check-quarantine || true # informational here — the PR check on merge is the real gate
+
+      # Never commits directly to main: opens a PR (manifest entry + source
+      # tag together, per docs/quarantine.md) for a human to review and merge.
+      - uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: "chore(quarantine): propose new quarantine entries"
+          title: "chore(quarantine): nightly flake detection"
+          body: |
+            Auto-detected flaky tests (>=3 failures in the trailing 20 runs) not
+            already quarantined. Each gets a `quarantine-manifest.json` entry AND
+            a `@quarantined` tag in source — review before merging; see
+            `flake-detection-summary.json` in this PR's diff and docs/quarantine.md.
+          branch: chore/quarantine-audit
+          add-paths: |
+            quarantine-manifest.json
+            tests/**
+            flake-detection-summary.json

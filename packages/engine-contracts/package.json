@@ -1,0 +1,46 @@
+{
+  "name": "@qaf/engine-contracts",
+  "version": "0.1.0",
+  "description": "Layer 3 seam for the AI-Driven QA Platform: abstract interfaces for the four pillars (RAG, Self-Healing Interceptor, GraphRAG Impact/RCA, Synthetic Data) that @qaf/orchestrator depends on, plus adapters implementing each one directly against @qaf/rag-core, @qaf/graph-rag, @qaf/synth-data, and @qaf/core — no new engine logic, just a stable contract that survives a pillar's internals changing.",
+  "type": "module",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b --emitDeclarationOnly false --noEmit",
+    "lint": "eslint . --config ../../eslint.config.js",
+    "test": "tsc -p tsconfig.test.json && node --test '.test-dist/**/*.test.js'",
+    "clean": "rm -rf dist .test-dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@qaf/core": "workspace:*",
+    "@qaf/graph-rag": "workspace:*",
+    "@qaf/llm-gateway": "workspace:*",
+    "@qaf/rag-core": "workspace:*",
+    "@qaf/synth-data": "workspace:*"
+  },
+  "peerDependencies": {
+    "@playwright/test": ">=1.48.0"
+  },
+  "peerDependenciesMeta": {
+    "@playwright/test": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.1",
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}
