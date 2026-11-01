@@ -37,7 +37,7 @@
     "@qaf/storage-core": "workspace:*",
     "@qaf/synth-data": "workspace:*",
     "fastify": "^5.0.0",
-    "zod": "^3.23.0"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
